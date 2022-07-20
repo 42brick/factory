@@ -3,11 +3,11 @@ from selenium import webdriver
 from datetime import date
 import time
 import os
-import re
 import urllib
 from urllib.request import urlopen
 from urllib.parse import quote_plus
 from selenium.webdriver import ActionChains
+from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
 # 1. 드라이버 로드
@@ -18,10 +18,11 @@ chrome_options.add_argument('--disable-sdev-shm-usage')
 chrome_options.add_argument('--disable-gpu')
 #chrome_options.add_argument('--window-size=1920,1080')
 if platform.system() == 'Windows': #크롬 드라이버 확인
-	driver_link = os.getcwd() + '/factory/modules/driver/chromedriver.exe'
+	# driver_link = os.getcwd() + '/factory/modules/driver/chromedriver.exe'
+	driver_link = "C:/chromedriver.exe"
 else:
 	driver_link = os.getcwd() + '/factory/modules/driver/chromedriver_m1'
-driver = webdriver.Chrome(options=chrome_options)
+driver = webdriver.Chrome(driver_link, options=chrome_options)
 
 def parsing():
 	html = driver.page_source
@@ -32,11 +33,12 @@ def parsing():
 def find_lego(idx):
 	xpath = f'/html/body/form/div[2]/div/div/div[2]/div[1]/div/div/div[{idx}]/div[1]'
 	first_xpath = xpath + '/a'
-	img_container = driver.find_element_by_xpath(first_xpath)
+	img_container = driver.find_element(by=By.XPATH, value=first_xpath)
+	theme = img_container.get_attribute('href').split('/')[-1]
 	img_container.click()
 
 	#중분류 미니피규어 개수
-	minifigs_num = driver.find_element_by_xpath('/html/body/form/div[2]/div[2]/div[2]/div[1]/div[2]/div[3]/div[2]').text
+	minifigs_num = driver.find_element(by=By.XPATH, value='/html/body/form/div[2]/div[2]/div[2]/div[1]/div[2]/div[3]/div[2]').text
 
 	soup = parsing()
 	minifigs_serial = []
@@ -44,11 +46,13 @@ def find_lego(idx):
 		minifigs_serial.extend([td.find("a")['href'].split('/')[-2] for td in soup.find_all("td", {"class":"ctlminifigs-image"})])
 		next_btn_idx = len(soup.find_all("li", {"class":"page-item"})) - 1
 		while True:
-			next_btn = driver.find_element_by_xpath(f"/html/body/form/div[2]/div[2]/div[1]/div[2]/div[3]/ul/li[{next_btn_idx}]/a")
+			next_btn = driver.find_element(by=By.XPATH, value=f"/html/body/form/div[2]/div[2]/div[1]/div[2]/div[3]/ul/li[{next_btn_idx}]/a")
 			try:
 				next_btn.click()
 				time.sleep(1)
 				soup = parsing()
+				if [td.find("a")['href'].split('/')[-2] for td in soup.find_all("td", {"class":"ctlminifigs-image"})][0] in minifigs_serial:
+					break
 				minifigs_serial.extend([td.find("a")['href'].split('/')[-2] for td in soup.find_all("td", {"class":"ctlminifigs-image"})])
 			except:
 				break
@@ -57,32 +61,32 @@ def find_lego(idx):
 
 	driver.back()
 	time.sleep(1)
-	return minifigs_serial
+	return theme, minifigs_serial
 
 
 if __name__ == "__main__":
 
 	base_url = 'https://www.brickeconomy.com/minifigs'
 	driver.get(base_url)
-	minifigs = []
 	for i in range(1, 126):
-		minifigs_serial = find_lego(i) #1~125
+		minifigs = []
+		theme, minifigs_serial = find_lego(i) #1~125
 		minifigs.extend(minifigs_serial)
 
-	if platform.system() == 'Windows':
-		if not os.path.exists("C:/Users/waudy/Desktop/factory/img"):
-			os.makedirs("C:/Users/waudy/Desktop/factory/img")
-	else:
-		if not os.path.exists(os.getcwd() + "/factory/img"):
-			os.makedirs(os.getcwd() + "/factory/img")
+		if platform.system() == 'Windows':
+			if not os.path.exists(f"C:/SGM_AI/42Brick/factory/img/{theme}"):
+				os.makedirs(f"C:/SGM_AI/42Brick/factory/img/{theme}")
+		else:
+			if not os.path.exists(os.getcwd() + f"/factory/img/{theme}"):
+				os.makedirs(os.getcwd() + f"/factory/img/{theme}")
 
-	opener = urllib.request.build_opener()
-	opener.addheaders = [('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
-	urllib.request.install_opener(opener)
+		opener = urllib.request.build_opener()
+		opener.addheaders = [('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
+		urllib.request.install_opener(opener)
 
-	for ele in minifigs:
-		img = 'https://www.brickeconomy.com/resources/images/minifigs/' + ele + '_large.jpg'
-		urllib.request.urlretrieve(img, "C:/Users/waudy/Desktop/factory/img/{0}.jpg".format(ele))
+		for ele in minifigs:
+			img = 'https://www.brickeconomy.com/resources/images/minifigs/' + ele + '_large.jpg'
+			urllib.request.urlretrieve(img, "C:/SGM_AI/42Brick/factory/img/{0}/{1}.jpg".format(theme, ele))
 
 	"""
 	1. /html/body/form/div[2]/div/div/div[2]/div[1]/div/div/div[1]/div[1]/a 를 클릭한다
