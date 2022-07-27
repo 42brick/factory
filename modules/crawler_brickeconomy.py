@@ -16,6 +16,7 @@ chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-sdev-shm-usage')
 chrome_options.add_argument('--disable-gpu')
+chrome_options.binary_location = "C:/Program Files/Google/Chrome Beta/Application/chrome.exe"
 #chrome_options.add_argument('--window-size=1920,1080')
 
 # 2. OS 에 맞춰 드라이버 세팅 (버전 체크 필요)
@@ -44,7 +45,7 @@ def find_lego(idx):
 	# 5. page 가 나뉘어져 있는지 확인
 	if soup.find("div", {"class":"paging"}):
 		minifigs_serial.extend([td.find("a")['href'].split('/')[-2] for td in soup.find_all("td", {"class":"ctlminifigs-image"})])
-		next_btn_idx = len(soup.find_all("li", {"class":"page-item"})) - 1
+		next_btn_idx = len(soup.find_all("li", {"class":"page-item"}))
 		while True:
 			next_btn = driver.find_element(by=By.XPATH, value=f"/html/body/form/div[2]/div[2]/div[1]/div[2]/div[3]/ul/li[{next_btn_idx}]/a")
 			try:
@@ -59,6 +60,7 @@ def find_lego(idx):
 	else:
 		minifigs_serial.extend([td.find("a")['href'].split('/')[-2] for td in soup.find_all("td", {"class":"ctlminifigs-image"})])
 
+	print(theme,minifigs_serial)
 	driver.back()
 	time.sleep(1)
 	return theme, minifigs_serial
@@ -66,7 +68,10 @@ def find_lego(idx):
 def main():
 	base_url = 'https://www.brickeconomy.com/minifigs'
 	driver.get(base_url)
+
 	for i in range(1, 126):
+	# sports(95번), start-wars(96번), town(113번)에서 오류 발생
+	# for i in [95, 96, 113]:
 		minifigs = []
 		theme, minifigs_serial = find_lego(i) #1~125, 중분류 개수
 		minifigs.extend(minifigs_serial)
@@ -82,9 +87,9 @@ def main():
 		opener.addheaders = [('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
 		urllib.request.install_opener(opener)
 
-		for ele in minifigs:
-			img = 'https://www.brickeconomy.com/resources/images/minifigs/' + ele + '_large.jpg'
-			urllib.request.urlretrieve(img, "C:/SGM_AI/42Brick/factory/img/{0}/{1}.jpg".format(theme, ele))
+		for e in minifigs:
+			img = 'https://www.brickeconomy.com/resources/images/minifigs/' + e + '_large.jpg'
+			urllib.request.urlretrieve(img, "C:/SGM_AI/42Brick/factory/img/{0}/{1}.jpg".format(theme, e))
 
 
 if __name__ == "__main__":
