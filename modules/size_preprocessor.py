@@ -10,14 +10,24 @@ from deepface import DeepFace
 # resize y
 def image_resize_y(img_path: str, output_path: str, length: int) -> None:
     dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img_trim = dst[:, :]
-    cv2.imwrite(output_path, img_trim) 
+
+    aff = np.array([[1, 0, 0],
+                    [0, 1, length]], dtype=np.float32)
+                    
+    img_resize = cv2.warpAffine(dst, aff, (0, 0), borderValue=(255,255,255))
+
+    cv2.imwrite(output_path, img_resize) 
 
 # resize x
 def image_resize_x(img_path: str, output_path: str, length: int) -> None:
     dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img_trim = dst[:, :]
-    cv2.imwrite(output_path, img_trim) 
+
+    aff = np.array([[1, 0, length],
+                    [0, 1, 0]], dtype=np.float32)
+                    
+    img_resize = cv2.warpAffine(dst, aff, (0, 0), borderValue=(255,255,255))
+
+    cv2.imwrite(output_path, img_resize) 
 
 # Contour criteria hand
 def image_resize_hand(img_path: str, output_path: str) -> None:
@@ -212,8 +222,8 @@ def main():
     if not os.path.exists("C:/SGM_AI/42Brick/img_resize_foot"):
         os.makedirs("C:/SGM_AI/42Brick/img_resize_foot")
 
-    opt = "foot"
-    process(opt)
+    # opt = "foot"
+    # process(opt)
     
 if __name__ == "__main__":
     main()
