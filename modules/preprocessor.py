@@ -7,6 +7,28 @@ from retinaface import RetinaFace
 import matplotlib.pyplot as plt
 from deepface import DeepFace
 
+# resize y
+def image_resize_y(img_path: str, output_path: str, length: int) -> None:
+    dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
+
+    aff = np.array([[1, 0, 0],
+                    [0, 1, length]], dtype=np.float32)
+                    
+    img_resize = cv2.warpAffine(dst, aff, (0, 0), borderValue=(255,255,255))
+
+    cv2.imwrite(output_path, img_resize) 
+
+# resize x
+def image_resize_x(img_path: str, output_path: str, length: int) -> None:
+    dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
+
+    aff = np.array([[1, 0, length],
+                    [0, 1, 0]], dtype=np.float32)
+                    
+    img_resize = cv2.warpAffine(dst, aff, (0, 0), borderValue=(255,255,255))
+
+    cv2.imwrite(output_path, img_resize) 
+
 # Contour criteria hand
 def image_resize_hand(img_path: str, output_path: str) -> None:
     src = cv2.imread(img_path, cv2.IMREAD_COLOR)
@@ -60,7 +82,7 @@ def image_resize_hand(img_path: str, output_path: str) -> None:
     hand_x_min = int(round(hand_x_min))
     x = hand_x_max - hand_x_min
 
-    hand_y_max = max(hand_y_left, hand_y_right) - 160
+    hand_y_max = max(hand_y_left, hand_y_right) - 360
     hand_y = hand_y_max - y_min
     if hand_y > 256:
         avg_y = hand_y - 256
@@ -76,7 +98,7 @@ def image_resize_hand(img_path: str, output_path: str) -> None:
     hand_y = hand_y_max - y_min
 
     dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img_trim = dst[y_min:hand_y_max, hand_x_min:hand_x_max]
+    img_trim = dst[y_min:hand_y_max, hand_x_min-20:hand_x_max-20]
     cv2.imwrite(output_path, img_trim)
 
 
@@ -156,51 +178,43 @@ def image_resize_foot(img_path: str, output_path: str) -> None:
     y = new_y_max - new_y_min
 
     dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img_trim = dst[new_y_min:new_y_max, hand_x_min:hand_x_max]
+    img_trim = dst[new_y_min-50:new_y_max-50, hand_x_min-20:hand_x_max-20]
     cv2.imwrite(output_path, img_trim)
 
-def process(save_path: str) -> None:
+def process(opt: str) -> None:
     error_hand = []
     error_foot = []
 
     root_dir = 'C:/SGM_AI/42Brick/img_human_filter'
 
-    img_path_list = []
     for (root, dirs, files) in os.walk(root_dir):
         if len(files) > 0: 
             for file_name in files:
                 if os.path.splitext(file_name)[1] == '.jpg':
-                    img_path = root + '/' + file_name
-                    
-                    img_path = img_path.replace('\\', '/')
-                    img_path_list.append(img_path)
+                    img_url = root.replace('\\', '/') + '/' + file_name
+                    if opt == "hand":
+                        try:
+                            output_url = 'C:/SGM_AI/42Brick/img_resize_hand/' + file_name
+                            image_resize_hand(img_url, output_url)
+                        except:
+                            error_hand.append(file_name) #serial number만 저장하기
+                            continue
+                    else:
+                        try:
+                            output_url = 'C:/SGM_AI/42Brick/img_resize_foot/' + file_name
+                            image_resize_foot(img_url, output_url)
+                        except:
+                            error_foot.append(file_name)
+                            continue
 
-    for i in range(1, 101):
-        img_url = 'C:/SGM_AI/42Brick/img_resize_hand/'
-        if save_path.split('/')[-1] == "img_resize_hand":
-            try:
-                output_url = 'C:/SGM_AI/42Brick/img_resize_hand/'
-                image_resize_hand(img_url, output_url)
-            except:
-                error_hand.append(img_url) #serial number만 저장하기
-                continue
-        else:
-            try:
-                output_url = 'C:/SGM_AI/42Brick/img_resize_foot/' + img_url[1:10]
-                image_resize_foot(img_url, output_url)
-            except:
-                error_foot.append(img_url)
-                continue
-        
-        if i % 50 == 0:
-            print(i,"번째 레고 이미지 전처리 완료")
-            
     print("-" * 50)
-    if save_path.split('/')[-1] == "img_resize_hand":
+
+    if opt == "hand":
         print(len(error_hand),"개 문제 발생")
     else:
         print(len(error_foot),"개 문제 발생")
     
+
 def main():
     
     if not os.path.exists("C:/SGM_AI/42Brick/img_resize_hand"):
@@ -208,8 +222,8 @@ def main():
     if not os.path.exists("C:/SGM_AI/42Brick/img_resize_foot"):
         os.makedirs("C:/SGM_AI/42Brick/img_resize_foot")
 
-    save_path = "C:/SGM_AI/42Brick/img_resize_hand"
-    process(save_path)
+    # opt = "foot"
+    # process(opt)
     
 if __name__ == "__main__":
     main()
