@@ -1,5 +1,3 @@
-# postprocessing: light
-
 # postprocessing: quality
 
 # augmentation: color shifting
