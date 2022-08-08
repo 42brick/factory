@@ -67,9 +67,6 @@ image_sharp = cv2.filter2D(res_img, -1, kernel)
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 image_sharp = cv2.cvtColor(image_sharp, cv2.COLOR_BGR2RGB)
 
-
-
-
 fig, ax = plt.subplots(1,2, figsize=(10,5))
 ax[0].imshow(image, cmap='gray')
 ax[0].set_title ('Original Image')

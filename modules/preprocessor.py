@@ -1,11 +1,15 @@
+"""
+2022.07.18 suschoi
+refactoring: preprocess class (affine, padding, resize)
+"""
+
 import os
+import constantly
 import cv2
 import numpy as np
 import math
 from PIL import Image
-from retinaface import RetinaFace
 import matplotlib.pyplot as plt
-from deepface import DeepFace
 
 # resize y
 def image_resize_y(img_path: str, output_path: str, length: int) -> None:
@@ -13,8 +17,11 @@ def image_resize_y(img_path: str, output_path: str, length: int) -> None:
 
     aff = np.array([[1, 0, 0],
                     [0, 1, length]], dtype=np.float32)
-                    
-    img_resize = cv2.warpAffine(dst, aff, (0, 0), borderValue=(255,255,255))
+
+    npad = ((length, 0), (0, 0), (0, 0))
+    img_resize = np.pad(dst, npad, 'constant', constant_values=(255)) # value: color
+
+    # img_resize = cv2.warpAffine(dst, aff, (0, 0), borderValue=(255,255,255))
 
     cv2.imwrite(output_path, img_resize) 
 
@@ -98,7 +105,7 @@ def image_resize_hand(img_path: str, output_path: str) -> None:
     hand_y = hand_y_max - y_min
 
     dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img_trim = dst[y_min:hand_y_max, hand_x_min-20:hand_x_max-20]
+    img_trim = dst[y_min-50:hand_y_max-50, hand_x_min-20:hand_x_max-20]
     cv2.imwrite(output_path, img_trim)
 
 
@@ -178,7 +185,7 @@ def image_resize_foot(img_path: str, output_path: str) -> None:
     y = new_y_max - new_y_min
 
     dst = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img_trim = dst[new_y_min-50:new_y_max-50, hand_x_min-20:hand_x_max-20]
+    img_trim = dst[new_y_min-140:new_y_max-140, hand_x_min-20:hand_x_max-20]
     cv2.imwrite(output_path, img_trim)
 
 def process(opt: str) -> None:
@@ -195,14 +202,16 @@ def process(opt: str) -> None:
                     if opt == "hand":
                         try:
                             output_url = 'C:/SGM_AI/42Brick/img_resize_hand/' + file_name
-                            image_resize_hand(img_url, output_url)
+                            image_resize_y(img_url, output_url, 200)
+                            image_resize_hand(output_url, output_url)
                         except:
                             error_hand.append(file_name) #serial number만 저장하기
                             continue
                     else:
                         try:
                             output_url = 'C:/SGM_AI/42Brick/img_resize_foot/' + file_name
-                            image_resize_foot(img_url, output_url)
+                            image_resize_y(img_url, output_url, 200)
+                            image_resize_foot(output_url, output_url)
                         except:
                             error_foot.append(file_name)
                             continue
@@ -222,8 +231,8 @@ def main():
     if not os.path.exists("C:/SGM_AI/42Brick/img_resize_foot"):
         os.makedirs("C:/SGM_AI/42Brick/img_resize_foot")
 
-    # opt = "foot"
-    # process(opt)
+    opt = "foot"
+    process(opt)
     
 if __name__ == "__main__":
     main()
